@@ -34,7 +34,9 @@ class ReferenceSequence(object):
             # Choose random hot spots for this sequence
             synthetic_seq.hot_locuses = self.__synthetic_sequence_hot_spots()
             # Identify the type of change
+            start_pos = 0
             for locus in synthetic_seq.hot_locuses:
+                synthetic_seq.fill_before_locus(self, start_pos, locus - 1)
                 if (self.hot_spots_variation_dict[locus] == "sub"):
                     high_variance = False
                     if (self.high_variance_hot_spots.__contains__(locus)):
@@ -49,7 +51,42 @@ class ReferenceSequence(object):
         print "*********Finished generating synthetic sequences*********\n"
 
     def __substitution_handler(self, synthetic_seq, high_variance, locus):
-        self.variation_controller.sub_controller.get_locuses()[locus]
+        variations_list, variations_set = self.variation_controller.sub_controller.get_locuses()[locus]
+        sum = 0.0
+        distribution_table_list = list()
+        for key in self.variation_controller.sub_controller.possible_sizes_prob.keys():
+            distribution_table_list.append(
+                [sum, sum + self.variation_controller.sub_controller.possible_sizes_prob[key], key])
+            sum = sum + self.variation_controller.sub_controller.possible_sizes_prob[key]
+        if (len(variations_set) < self.variation_controller.MAX_VARIATION_CAP):
+            rvalue = self.variation_controller.sub_controller.r.uniform(0.0, 1.0)
+            chosen_size = 0
+            for i in range(len(distribution_table_list)):
+                if (rvalue >= distribution_table_list[i][0] and rvalue <= distribution_table_list[i][1]):
+                    chosen_size = distribution_table_list[i][2]
+                    break
+            if (chosen_size == 0):
+                raise ValueError("The chosen size is zero!")
+
+            ref_string = self.sequence[locus:locus + chosen_size - 1]
+            seq_string = ""
+            r = Random()
+            r.seed(datetime.now())
+
+            for i in range(len(ref_string)):
+                possibilities = list()
+                if (ref_string[i].upper() == "A"):
+                    possibilities = ["T", "C", "G"]
+                elif (ref_string[i].upper() == "T"):
+                    possibilities = ["A", "C", "G"]
+                elif (ref_string[i].upper() == "G"):
+                    possibilities = ["A", "C", "T"]
+                elif (ref_string[i].upper() == "C"):
+                    possibilities = ["A", "G", "T"]
+                seq_string = seq_string + possibilities[r.randint(0, 2)]
+
+            synthetic_seq.sequence = synthetic_seq.sequence + seq_string
+
 
     def __synthetic_sequence_hot_spots(self):
         synthetic_seq_hot_spots = SortedSet()

@@ -12,3 +12,6 @@ class SyntheticSequence(object):
 
     def sequence_size(self):
         return len(self.sequence)
+
+    def fill_before_locus(self, start, end):
+        self.hot_locuses = self.hot_locuses + self.refrence_seq.sequence[start:end]

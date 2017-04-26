@@ -1,6 +1,7 @@
 from Utility import Utility
 from sortedcontainers import SortedDict, SortedList, SortedSet
-
+from random import Random
+from datetime import datetime
 
 class VariationController(object):
     MAX_VARIATION_CAP = 10
@@ -78,8 +79,7 @@ class VariationController(object):
                 print line_portions[0] + " => " + line_portions[1]
                 self.hot_spot_max_interval_to_size_ratio = float(line_portions[1])
 
-            elif (
-                        ''.join(sorted(line_portions[0])).strip() == ''.join(
+            elif (''.join(sorted(line_portions[0])).strip() == ''.join(
                         sorted("substitution_occurrence_ratio")).strip()):
                 print line_portions[0] + " => " + line_portions[1]
                 SubstitutionController.OCCURRENCE_RATIO = float(line_portions[1])
@@ -96,20 +96,32 @@ class VariationController(object):
 
 
 class VariationTypeController(object):
+
     def __init__(self):
         self.locuses = SortedDict()
+        self.locuses_set = SortedDict()
+        self.r = Random()
+        self.r.seed(datetime.now())
 
     def get_locuses(self):
-        return self.locuses
+        return self.locuses, self.locuses_set
 
     def add_value_to_locus(self, key, value):
         if (not self.locuses.has_key(key)):
             values_list = SortedList(value)
             self.locuses[key] = values_list
         else:
-            values_list = SortedList(self.locuses[key])
+            values_list = self.locuses[key]
             values_list.add(value)
             self.locuses[key] = values_list
+
+        if (not self.locuses_set.has_key(key)):
+            values_set = SortedSet(value)
+            self.locuses_set[key] = values_set
+        else:
+            values_set = self.locuses_set[key]
+            values_set.add(value)
+            self.locuses_set[key] = values_set
 
     # def set_occurance_probability(self,prob):
     #     self.occur_prob = prob
