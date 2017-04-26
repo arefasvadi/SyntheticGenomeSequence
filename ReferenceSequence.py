@@ -37,12 +37,13 @@ class ReferenceSequence(object):
             start_pos = 0
             for locus in synthetic_seq.hot_locuses:
                 synthetic_seq.fill_before_locus(self, start_pos, locus - 1)
-                start_pos = locus + 1
                 if (self.hot_spots_variation_dict[locus] == "sub"):
                     high_variance = False
                     if (self.high_variance_hot_spots.__contains__(locus)):
                         high_variance = True
-                    self.__substitution_handler(synthetic_seq, high_variance, locus)
+
+                    start_pos = locus + \
+                                self.__substitution_handler(synthetic_seq, high_variance, locus)
                 elif (self.hot_spots_variation_dict[locus] == "ins"):
                     self.__insertion_handler(synthetic_seq)
                 elif (self.hot_spots_variation_dict[locus] == "del"):
@@ -55,6 +56,7 @@ class ReferenceSequence(object):
     def __substitution_handler(self, synthetic_seq, high_variance, locus):
         variations_list, variations_set = self.variation_controller.sub_controller.get_locuses()[locus]
         sum = 0.0
+        chosen_size = 0
         distribution_table_list = list()
         for key in self.variation_controller.sub_controller.possible_sizes_prob.keys():
             distribution_table_list.append(
@@ -63,7 +65,6 @@ class ReferenceSequence(object):
 
         if (len(variations_set) < self.variation_controller.MAX_VARIATION_CAP):
             rvalue = self.variation_controller.sub_controller.r.uniform(0.0, 1.0)
-            chosen_size = 0
             for i in range(len(distribution_table_list)):
                 if (rvalue >= distribution_table_list[i][0] and rvalue <= distribution_table_list[i][1]):
                     chosen_size = distribution_table_list[i][2]
@@ -98,10 +99,12 @@ class ReferenceSequence(object):
                 seq_string = variations_set[rvalue]
                 synthetic_seq.sequence = synthetic_seq.sequence + seq_string
                 self.variation_controller.sub_controller.add_value_to_locus(locus, seq_string)
+                chosen_size = len(seq_string)
             else:
                 synthetic_seq.sequence = synthetic_seq.sequence + most_common_value
                 self.variation_controller.sub_controller.add_value_to_locus(locus, most_common_value)
-
+                chosen_size = len(most_common_value)
+        return chosen_size
 
     def __synthetic_sequence_hot_spots(self):
         synthetic_seq_hot_spots = SortedSet()
