@@ -1,0 +1,37 @@
+#What percentages of locations can possibly have variations
+reference-all-hot-spots-locus => 0.07
+
+#What percentages of locations can have lots of variations
+reference-hot-spots-variance-locus => 0.03
+
+#At least X% of sequences must share the most common value in high variance regions
+min-percent-high-variance-share => 0.20
+
+#At most X% of sequences must share the most common value in high variance regions
+max-percent-high-variance-share => 0.40
+
+#At least X% of sequences must share the most common value
+min-percent-low-variance-share => 0.80
+
+#At most X% of sequences must share the most common value
+max-percent-low-variance-share => 0.99
+
+#Max cap for the total number of different variations a single hot spot can have
+max-cap-hot-spot-type-variation => 15
+
+#Expected pairwise variation relative to reference
+expected-pairwise-variation-to-reference => 0.04
+
+#Minimum distance between two hot spots in ratio with reference size
+hot-spot-min-interval-to-size-ratio => 0.004
+#Maximum distance between two hot spots in ratio with reference size
+hot-spot-max-interval-to-size-ratio => 0.3
+
+#Substitution variation occurrence ratio
+substitution_occurrence_ratio => 0.85
+
+#Insertion variation occurrence ratio
+insertion_occurrence_ratio => 0.08
+
+#Deletion variation occurrence ratio
+deletion_occurrence_ratio => 0.07
