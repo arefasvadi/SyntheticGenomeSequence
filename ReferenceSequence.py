@@ -37,6 +37,7 @@ class ReferenceSequence(object):
             start_pos = 0
             for locus in synthetic_seq.hot_locuses:
                 synthetic_seq.fill_before_locus(self, start_pos, locus - 1)
+                start_pos = locus
                 if (self.hot_spots_variation_dict[locus] == "sub"):
                     high_variance = False
                     if (self.high_variance_hot_spots.__contains__(locus)):
@@ -46,7 +47,8 @@ class ReferenceSequence(object):
                     self.__insertion_handler(synthetic_seq)
                 elif (self.hot_spots_variation_dict[locus] == "del"):
                     self.__deletion_handler(synthetic_seq)
-
+            if (start_pos < self.sequence_size):
+                synthetic_seq.fill_before_locus(self, start_pos, synthetic_seq.get_sequence_size() - 1)
                     # cnt = cnt + 1
         print "*********Finished generating synthetic sequences*********\n"
 

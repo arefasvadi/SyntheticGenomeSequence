@@ -10,8 +10,10 @@ class SyntheticSequence(object):
         # self.sequence_size = 0
         self.hot_locuses = SortedSet()
 
-    def sequence_size(self):
+    def get_sequence_size(self):
         return len(self.sequence)
 
     def fill_before_locus(self, start, end):
-        self.hot_locuses = self.hot_locuses + self.refrence_seq.sequence[start:end]
+        if (start > end):
+            return
+        self.sequence = self.sequence + self.refrence_seq.sequence[start:end]
