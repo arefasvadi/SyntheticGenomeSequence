@@ -37,7 +37,7 @@ class ReferenceSequence(object):
             start_pos = 0
             for locus in synthetic_seq.hot_locuses:
                 synthetic_seq.fill_before_locus(self, start_pos, locus - 1)
-                start_pos = locus
+                start_pos = locus + 1
                 if (self.hot_spots_variation_dict[locus] == "sub"):
                     high_variance = False
                     if (self.high_variance_hot_spots.__contains__(locus)):
@@ -60,6 +60,7 @@ class ReferenceSequence(object):
             distribution_table_list.append(
                 [sum, sum + self.variation_controller.sub_controller.possible_sizes_prob[key], key])
             sum = sum + self.variation_controller.sub_controller.possible_sizes_prob[key]
+
         if (len(variations_set) < self.variation_controller.MAX_VARIATION_CAP):
             rvalue = self.variation_controller.sub_controller.r.uniform(0.0, 1.0)
             chosen_size = 0
@@ -71,23 +72,35 @@ class ReferenceSequence(object):
                 raise ValueError("The chosen size is zero!")
 
             ref_string = self.sequence[locus:locus + chosen_size - 1]
-            seq_string = ""
-            r = Random()
-            r.seed(datetime.now())
-
-            for i in range(len(ref_string)):
-                possibilities = list()
-                if (ref_string[i].upper() == "A"):
-                    possibilities = ["T", "C", "G"]
-                elif (ref_string[i].upper() == "T"):
-                    possibilities = ["A", "C", "G"]
-                elif (ref_string[i].upper() == "G"):
-                    possibilities = ["A", "C", "T"]
-                elif (ref_string[i].upper() == "C"):
-                    possibilities = ["A", "G", "T"]
-                seq_string = seq_string + possibilities[r.randint(0, 2)]
-
+            seq_string = self.variation_controller.sub_controller.substitution_mutation_generator(ref_string)
+            # self.variation_controller.sub_controller.add_value_to_locus(locus, ref_string)
             synthetic_seq.sequence = synthetic_seq.sequence + seq_string
+            self.variation_controller.sub_controller.add_value_to_locus(locus, seq_string)
+        else:
+            most_common_value, max_occurrence, total_length = self.variation_controller.sub_controller.most_common_occurrence(
+                locus)
+            lower_threshold = 0.0
+            upper_threshold = 1.0
+            if (high_variance):
+                lower_threshold = self.variation_controller.min_percent_high_variance_share
+                upper_threshold = self.variation_controller.max_percent_high_variance_share
+            elif (not high_variance):
+                lower_threshold = self.variation_controller.min_percent_low_variance_share
+                upper_threshold = self.variation_controller.max_percent_low_variance_share
+
+            current_occurrence = float(max_occurrence / total_length)
+            if (current_occurrence > lower_threshold and current_occurrence < upper_threshold):
+                rvalue = 0
+                while True:
+                    rvalue = self.variation_controller.sub_controller.r.randint(0, len(variations_set) - 1)
+                    if (variations_set[rvalue] != most_common_value):
+                        break
+                seq_string = variations_set[rvalue]
+                synthetic_seq.sequence = synthetic_seq.sequence + seq_string
+                self.variation_controller.sub_controller.add_value_to_locus(locus, seq_string)
+            else:
+                synthetic_seq.sequence = synthetic_seq.sequence + most_common_value
+                self.variation_controller.sub_controller.add_value_to_locus(locus, most_common_value)
 
 
     def __synthetic_sequence_hot_spots(self):

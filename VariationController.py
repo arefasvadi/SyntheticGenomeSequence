@@ -143,7 +143,7 @@ class VariationTypeController(object):
         if (not self.locuses.has_key(key)):
             raise RuntimeError("The key associated with size does not exist!")
         else:
-            values_list = SortedList(self.locuses[key])
+            values_list = self.locuses[key]
             max_occurrence = 0;
             most_common_value = ""
 
@@ -153,7 +153,7 @@ class VariationTypeController(object):
                 if (values_list.count(i) > max_occurrence):
                     max_occurrence = values_list.count(i)
                     most_common_value = i
-        return most_common_value, max_occurrence
+        return most_common_value, max_occurrence, len(values_list)
 
     def read_variation_type_specific_configs(self, pathandname):
         configs = Utility.readfile(pathandname)
@@ -204,6 +204,24 @@ class SubstitutionController(VariationTypeController):
         print "********Started Reading Substitution Configs********"
         super(SubstitutionController, self).read_variation_type_specific_configs(pathandname)
         print "********Finished Reading Substitution Configs********\n"
+
+    def substitution_mutation_generator(self, ref_string):
+
+        seq_string = ""
+        r = Random()
+        r.seed(datetime.now())
+        for i in range(len(ref_string)):
+            possibilities = list()
+            if (ref_string[i].upper() == "A"):
+                possibilities = ["T", "C", "G"]
+            elif (ref_string[i].upper() == "T"):
+                possibilities = ["A", "C", "G"]
+            elif (ref_string[i].upper() == "G"):
+                possibilities = ["A", "C", "T"]
+            elif (ref_string[i].upper() == "C"):
+                possibilities = ["A", "G", "T"]
+            seq_string = seq_string + possibilities[r.randint(0, 2)]
+        return seq_string
 
 
 class InsertionController(VariationTypeController):

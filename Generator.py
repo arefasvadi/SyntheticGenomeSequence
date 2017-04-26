@@ -5,7 +5,7 @@ from datetime import datetime
 
 def main():
     start_time = datetime.now()
-    SYNTHETIC_DATASET_SIZE = 100
+    SYNTHETIC_DATASET_SIZE = 20
     print "\nStart time is: " + str(start_time.time()) + "\n"
     reference_file_path = "references/reference3500/"
     reference_file_name = "reference3500.txt"
