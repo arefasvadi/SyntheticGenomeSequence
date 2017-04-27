@@ -21,3 +21,7 @@ class SyntheticSequence(object):
     def print_vcf(self):
         print "VCFs for sequence " + str(self.sequence_id) + " : "
         print self.vcf
+        print len(self.vcf)
+        print len(self.hot_locuses)
+        print self.sequence
+        print len(self.sequence)
