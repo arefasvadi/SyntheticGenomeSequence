@@ -103,8 +103,10 @@ class VariationTypeController(object):
         self.r = Random()
         self.r.seed(datetime.now())
 
-    def get_locuses(self):
-        return self.locuses, self.locuses_set
+    def get_locuses(self, locus):
+        if (not self.locuses_set.has_key(locus)):
+            return None, None
+        return self.locuses[locus], self.locuses_set[locus]
 
     def add_value_to_locus(self, key, value):
         if (not self.locuses.has_key(key)):

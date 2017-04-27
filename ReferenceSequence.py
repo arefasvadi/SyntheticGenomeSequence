@@ -36,7 +36,7 @@ class ReferenceSequence(object):
             # Identify the type of change
             start_pos = 0
             for locus in synthetic_seq.hot_locuses:
-                synthetic_seq.fill_before_locus(self, start_pos, locus - 1)
+                synthetic_seq.fill_before_locus(start_pos, locus - 1)
                 if (self.hot_spots_variation_dict[locus] == "sub"):
                     high_variance = False
                     if (self.high_variance_hot_spots.__contains__(locus)):
@@ -49,12 +49,13 @@ class ReferenceSequence(object):
                 elif (self.hot_spots_variation_dict[locus] == "del"):
                     self.__deletion_handler(synthetic_seq)
             if (start_pos < self.sequence_size):
-                synthetic_seq.fill_before_locus(self, start_pos, synthetic_seq.get_sequence_size() - 1)
+                synthetic_seq.fill_before_locus(start_pos, synthetic_seq.get_sequence_size() - 1)
                     # cnt = cnt + 1
+            print synthetic_seq.print_vcf()
         print "*********Finished generating synthetic sequences*********\n"
 
     def __substitution_handler(self, synthetic_seq, high_variance, locus):
-        variations_list, variations_set = self.variation_controller.sub_controller.get_locuses()[locus]
+        variations_list, variations_set = self.variation_controller.sub_controller.get_locuses(locus)
         sum = 0.0
         chosen_size = 0
         distribution_table_list = list()
@@ -63,7 +64,7 @@ class ReferenceSequence(object):
                 [sum, sum + self.variation_controller.sub_controller.possible_sizes_prob[key], key])
             sum = sum + self.variation_controller.sub_controller.possible_sizes_prob[key]
 
-        if (len(variations_set) < self.variation_controller.MAX_VARIATION_CAP):
+        if ((variations_set is None) or len(variations_set) < self.variation_controller.MAX_VARIATION_CAP):
             rvalue = self.variation_controller.sub_controller.r.uniform(0.0, 1.0)
             for i in range(len(distribution_table_list)):
                 if (rvalue >= distribution_table_list[i][0] and rvalue <= distribution_table_list[i][1]):
@@ -77,6 +78,9 @@ class ReferenceSequence(object):
             # self.variation_controller.sub_controller.add_value_to_locus(locus, ref_string)
             synthetic_seq.sequence = synthetic_seq.sequence + seq_string
             self.variation_controller.sub_controller.add_value_to_locus(locus, seq_string)
+            for i in range(len(seq_string)):
+                synthetic_seq.vcf.add([locus + i, "sub", seq_string[i]])
+
         else:
             most_common_value, max_occurrence, total_length = self.variation_controller.sub_controller.most_common_occurrence(
                 locus)
@@ -100,9 +104,13 @@ class ReferenceSequence(object):
                 synthetic_seq.sequence = synthetic_seq.sequence + seq_string
                 self.variation_controller.sub_controller.add_value_to_locus(locus, seq_string)
                 chosen_size = len(seq_string)
+                for i in range(len(seq_string)):
+                    synthetic_seq.vcf.add([locus + i, "sub", seq_string[i]])
             else:
                 synthetic_seq.sequence = synthetic_seq.sequence + most_common_value
                 self.variation_controller.sub_controller.add_value_to_locus(locus, most_common_value)
+                for i in range(len(most_common_value)):
+                    synthetic_seq.vcf.add([locus + i, "sub", most_common_value[i]])
                 chosen_size = len(most_common_value)
         return chosen_size
 

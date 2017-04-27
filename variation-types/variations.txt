@@ -28,10 +28,10 @@ hot-spot-min-interval-to-size-ratio => 0.004
 hot-spot-max-interval-to-size-ratio => 0.3
 
 #Substitution variation occurrence ratio
-substitution_occurrence_ratio => 0.85
+substitution_occurrence_ratio => 1.01
 
 #Insertion variation occurrence ratio
-insertion_occurrence_ratio => 0.08
+insertion_occurrence_ratio => 0.0
 
 #Deletion variation occurrence ratio
-deletion_occurrence_ratio => 0.07
+deletion_occurrence_ratio => 0.0

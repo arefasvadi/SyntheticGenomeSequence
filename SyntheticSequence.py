@@ -17,3 +17,7 @@ class SyntheticSequence(object):
         if (start > end):
             return
         self.sequence = self.sequence + self.refrence_seq.sequence[start:end]
+
+    def print_vcf(self):
+        print "VCFs for sequence " + str(self.sequence_id) + " : "
+        print self.vcf
