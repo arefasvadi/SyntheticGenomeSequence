@@ -24,7 +24,7 @@ class ReferenceSequence(object):
         self.__choose_high_variance_hot_spots()
         self.__assign_variation_type_to_hot_spots()
 
-    def generate_synthetic_sequence(self):
+    def generate_synthetic_sequence(self, output_file_path):
 
         print "*********Started generating synthetic sequences*********"
         # cnt = 0
@@ -59,7 +59,14 @@ class ReferenceSequence(object):
                 # synthetic_seq.fill_before_locus(start_pos, synthetic_seq.get_sequence_size() - 1)
                 synthetic_seq.fill_before_locus(start_pos, self.sequence_size)
                     # cnt = cnt + 1
-            synthetic_seq.print_vcf()
+            # synthetic_seq.print_vcf()
+            fasta_output = str(synthetic_seq.sequence_id) + ">\n" + str(synthetic_seq.sequence)
+            vcf_output = str(synthetic_seq.sequence_id) + ">\n" + str(synthetic_seq.vcf)
+            Utility.writefile(output_file_path + str(synthetic_seq.sequence_id) + ".fasta", fasta_output)
+            Utility.writefile(output_file_path + str(synthetic_seq.sequence_id) + ".vcf", vcf_output)
+        # Writing reference sequence
+        fasta_output = str(self.sequence_id) + ">\n" + str(self.sequence)
+        Utility.writefile(output_file_path + str(synthetic_seq.sequence_id) + ".fasta", fasta_output)
         print "*********Finished generating synthetic sequences*********\n"
 
     def __substitution_handler(self, synthetic_seq, high_variance, locus):
