@@ -14,14 +14,15 @@ class SyntheticSequence(object):
         return len(self.sequence)
 
     def fill_before_locus(self, start, end):
-        if (start > end):
+        if (start >= end):
             return
         self.sequence = self.sequence + self.refrence_seq.sequence[start:end]
 
     def print_vcf(self):
         print "VCFs for sequence " + str(self.sequence_id) + " : "
         print self.vcf
-        print len(self.vcf)
-        print len(self.hot_locuses)
-        print self.sequence
-        print len(self.sequence)
+        print "Length of vcf set: " + str(len(self.vcf))
+        print "Set of chosen hot spots\n" + str(self.hot_locuses)
+        print "Length of hot sopts set: " + str(len(self.hot_locuses))
+        print "Generated sequence is: " + self.sequence
+        print "Length of sequence is: " + str(len(self.sequence)) + "\n"

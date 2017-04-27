@@ -210,8 +210,6 @@ class SubstitutionController(VariationTypeController):
     def substitution_mutation_generator(self, ref_string):
 
         seq_string = ""
-        r = Random()
-        r.seed(datetime.now())
         for i in range(len(ref_string)):
             possibilities = list()
             if (ref_string[i].upper() == "A"):
@@ -222,7 +220,7 @@ class SubstitutionController(VariationTypeController):
                 possibilities = ["A", "C", "T"]
             elif (ref_string[i].upper() == "C"):
                 possibilities = ["A", "G", "T"]
-            seq_string = seq_string + possibilities[r.randint(0, 2)]
+            seq_string = seq_string + possibilities[self.r.randint(0, 2)]
         return seq_string
 
 
@@ -237,6 +235,12 @@ class InsertionController(VariationTypeController):
         super(InsertionController, self).read_variation_type_specific_configs(pathandname)
         print "********Finished Reading Insertion Configs********\n"
 
+    def insertion_mutation_generator(self, chosen_size):
+        seq_string = ""
+        possibilities = ["A", "T", "C", "G"]
+        for i in range(chosen_size):
+            seq_string = seq_string + possibilities[self.r.randint(0, 3)]
+        return seq_string
 
 class DeletionController(VariationTypeController):
     OCCURRENCE_RATIO = 0.1

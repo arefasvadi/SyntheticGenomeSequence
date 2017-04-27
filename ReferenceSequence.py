@@ -36,22 +36,30 @@ class ReferenceSequence(object):
             # Identify the type of change
             start_pos = 0
             for locus in synthetic_seq.hot_locuses:
-                synthetic_seq.fill_before_locus(start_pos, locus - 1)
+                synthetic_seq.fill_before_locus(start_pos, locus)
+                high_variance = False
                 if (self.hot_spots_variation_dict[locus] == "sub"):
-                    high_variance = False
+                    if (self.high_variance_hot_spots.__contains__(locus)):
+                        high_variance = True
+                    start_pos = locus + \
+                                self.__substitution_handler(synthetic_seq, high_variance, locus)
+                elif (self.hot_spots_variation_dict[locus] == "ins"):
+                    if (self.high_variance_hot_spots.__contains__(locus)):
+                        high_variance = True
+
+                    start_pos = locus
+                    self.__insertion_handler(synthetic_seq, high_variance, locus)
+                elif (self.hot_spots_variation_dict[locus] == "del"):
                     if (self.high_variance_hot_spots.__contains__(locus)):
                         high_variance = True
 
                     start_pos = locus + \
-                                self.__substitution_handler(synthetic_seq, high_variance, locus)
-                elif (self.hot_spots_variation_dict[locus] == "ins"):
-                    self.__insertion_handler(synthetic_seq)
-                elif (self.hot_spots_variation_dict[locus] == "del"):
-                    self.__deletion_handler(synthetic_seq)
+                                self.__deletion_handler(synthetic_seq, high_variance, locus)
             if (start_pos < self.sequence_size):
-                synthetic_seq.fill_before_locus(start_pos, synthetic_seq.get_sequence_size() - 1)
+                # synthetic_seq.fill_before_locus(start_pos, synthetic_seq.get_sequence_size() - 1)
+                synthetic_seq.fill_before_locus(start_pos, self.sequence_size)
                     # cnt = cnt + 1
-            print synthetic_seq.print_vcf()
+            synthetic_seq.print_vcf()
         print "*********Finished generating synthetic sequences*********\n"
 
     def __substitution_handler(self, synthetic_seq, high_variance, locus):
@@ -73,7 +81,7 @@ class ReferenceSequence(object):
             if (chosen_size == 0):
                 raise ValueError("The chosen size is zero!")
 
-            ref_string = self.sequence[locus:locus + chosen_size - 1]
+            ref_string = self.sequence[locus:locus + chosen_size]
             seq_string = self.variation_controller.sub_controller.substitution_mutation_generator(ref_string)
             # self.variation_controller.sub_controller.add_value_to_locus(locus, ref_string)
             synthetic_seq.sequence = synthetic_seq.sequence + seq_string
@@ -111,6 +119,125 @@ class ReferenceSequence(object):
                 self.variation_controller.sub_controller.add_value_to_locus(locus, most_common_value)
                 for i in range(len(most_common_value)):
                     synthetic_seq.vcf.add([locus + i, "sub", most_common_value[i]])
+                chosen_size = len(most_common_value)
+        return chosen_size
+
+    def __insertion_handler(self, synthetic_seq, high_variance, locus):
+        variations_list, variations_set = self.variation_controller.ins_controller.get_locuses(locus)
+        sum = 0.0
+        chosen_size = 0
+        distribution_table_list = list()
+        for key in self.variation_controller.ins_controller.possible_sizes_prob.keys():
+            distribution_table_list.append(
+                [sum, sum + self.variation_controller.ins_controller.possible_sizes_prob[key], key])
+            sum = sum + self.variation_controller.ins_controller.possible_sizes_prob[key]
+        if ((variations_set is None) or len(variations_set) < self.variation_controller.MAX_VARIATION_CAP):
+            rvalue = self.variation_controller.ins_controller.r.uniform(0.0, 1.0)
+            for i in range(len(distribution_table_list)):
+                if (rvalue >= distribution_table_list[i][0] and rvalue <= distribution_table_list[i][1]):
+                    chosen_size = distribution_table_list[i][2]
+                    break
+            if (chosen_size == 0):
+                raise ValueError("The chosen size is zero!")
+
+            # ref_string = self.sequence[locus:locus + chosen_size]
+            seq_string = self.variation_controller.ins_controller.insertion_mutation_generator(chosen_size)
+            # self.variation_controller.sub_controller.add_value_to_locus(locus, ref_string)
+            synthetic_seq.sequence = synthetic_seq.sequence + seq_string
+            self.variation_controller.ins_controller.add_value_to_locus(locus, seq_string)
+            for i in range(len(seq_string)):
+                synthetic_seq.vcf.add([locus + i, "ins", seq_string[i]])
+
+        else:
+            most_common_value, max_occurrence, total_length = self.variation_controller.ins_controller.most_common_occurrence(
+                locus)
+            lower_threshold = 0.0
+            upper_threshold = 1.0
+            if (high_variance):
+                lower_threshold = self.variation_controller.min_percent_high_variance_share
+                upper_threshold = self.variation_controller.max_percent_high_variance_share
+            elif (not high_variance):
+                lower_threshold = self.variation_controller.min_percent_low_variance_share
+                upper_threshold = self.variation_controller.max_percent_low_variance_share
+
+            current_occurrence = float(max_occurrence / total_length)
+            if (current_occurrence > lower_threshold and current_occurrence < upper_threshold):
+                rvalue = 0
+                while True:
+                    rvalue = self.variation_controller.ins_controller.r.randint(0, len(variations_set) - 1)
+                    if (variations_set[rvalue] != most_common_value):
+                        break
+                seq_string = variations_set[rvalue]
+                synthetic_seq.sequence = synthetic_seq.sequence + seq_string
+                self.variation_controller.ins_controller.add_value_to_locus(locus, seq_string)
+                chosen_size = len(seq_string)
+                for i in range(len(seq_string)):
+                    synthetic_seq.vcf.add([locus + i, "ins", seq_string[i]])
+            else:
+                synthetic_seq.sequence = synthetic_seq.sequence + most_common_value
+                self.variation_controller.ins_controller.add_value_to_locus(locus, most_common_value)
+                for i in range(len(most_common_value)):
+                    synthetic_seq.vcf.add([locus + i, "ins", most_common_value[i]])
+                chosen_size = len(most_common_value)
+        return chosen_size
+
+    def __deletion_handler(self, synthetic_seq, high_variance, locus):
+        variations_list, variations_set = self.variation_controller.del_controller.get_locuses(locus)
+        sum = 0.0
+        chosen_size = 0
+        distribution_table_list = list()
+        for key in self.variation_controller.del_controller.possible_sizes_prob.keys():
+            distribution_table_list.append(
+                [sum, sum + self.variation_controller.del_controller.possible_sizes_prob[key], key])
+            sum = sum + self.variation_controller.del_controller.possible_sizes_prob[key]
+
+        if ((variations_set is None) or len(variations_set) < self.variation_controller.MAX_VARIATION_CAP):
+            rvalue = self.variation_controller.del_controller.r.uniform(0.0, 1.0)
+            for i in range(len(distribution_table_list)):
+                if (rvalue >= distribution_table_list[i][0] and rvalue <= distribution_table_list[i][1]):
+                    chosen_size = distribution_table_list[i][2]
+                    break
+            if (chosen_size == 0):
+                raise ValueError("The chosen size is zero!")
+
+            ref_string = self.sequence[locus:locus + chosen_size]
+            # seq_string = self.variation_controller.sub_controller.substitution_mutation_generator(ref_string)
+            # self.variation_controller.sub_controller.add_value_to_locus(locus, ref_string)
+            # synthetic_seq.sequence = synthetic_seq.sequence + seq_string
+            self.variation_controller.del_controller.add_value_to_locus(locus, ref_string)
+            for i in range(len(ref_string)):
+                synthetic_seq.vcf.add([locus + i, "del", ref_string[i]])
+
+        else:
+            most_common_value, max_occurrence, total_length = self.variation_controller.del_controller.most_common_occurrence(
+                locus)
+            lower_threshold = 0.0
+            upper_threshold = 1.0
+            if (high_variance):
+                lower_threshold = self.variation_controller.min_percent_high_variance_share
+                upper_threshold = self.variation_controller.max_percent_high_variance_share
+            elif (not high_variance):
+                lower_threshold = self.variation_controller.min_percent_low_variance_share
+                upper_threshold = self.variation_controller.max_percent_low_variance_share
+
+            current_occurrence = float(max_occurrence / total_length)
+            if (current_occurrence > lower_threshold and current_occurrence < upper_threshold):
+                rvalue = 0
+                while True:
+                    rvalue = self.variation_controller.del_controller.r.randint(0, len(variations_set) - 1)
+                    if (variations_set[rvalue] != most_common_value):
+                        break
+                ref_string = variations_set[rvalue]
+                # synthetic_seq.sequence = synthetic_seq.sequence + seq_string
+                self.variation_controller.del_controller.add_value_to_locus(locus, ref_string)
+                chosen_size = len(ref_string)
+                for i in range(len(ref_string)):
+                    synthetic_seq.vcf.add([locus + i, "del", ref_string[i]])
+            else:
+                # synthetic_seq.sequence = synthetic_seq.sequence + most_common_value
+                self.variation_controller.del_controller.add_value_to_locus(locus, most_common_value)
+                for i in range(len(most_common_value)):
+                    synthetic_seq.vcf.add([locus + i, "del", most_common_value[i]])
                 chosen_size = len(most_common_value)
         return chosen_size
 
@@ -184,29 +311,29 @@ class ReferenceSequence(object):
         valid = False
         self.all_hot_spots.add(rvalue)
         index = self.all_hot_spots.index(rvalue)
+        max_distance = int(self.variation_controller.hot_spot_max_interval_to_size_ratio * self.sequence_size)
+        min_distance = int(self.variation_controller.hot_spot_min_interval_to_size_ratio * self.sequence_size)
+
         if (len(self.all_hot_spots) == 1):
             valid = True
         else:
             if (index - 1 >= 0):
-                if (abs(self.all_hot_spots[index - 1] - rvalue) <= int(
-                            self.variation_controller.hot_spot_max_interval_to_size_ratio * self.sequence_size)
-                    and abs(self.all_hot_spots[index - 1] - rvalue) >= int(
-                            self.variation_controller.hot_spot_min_interval_to_size_ratio * self.sequence_size)):
+                if (abs(self.all_hot_spots[index - 1] - rvalue) <= max_distance
+                    and abs(self.all_hot_spots[index - 1] - rvalue) >= min_distance):
                     valid = True
+                else:
+                    self.all_hot_spots.remove(rvalue)
+                    return valid
             if (index + 1 <= len(self.all_hot_spots) - 1):
-                if (valid == True):
-                    if (abs(self.all_hot_spots[index + 1] - rvalue) <= int(
-                                self.variation_controller.hot_spot_max_interval_to_size_ratio * self.sequence_size)
-                        and abs(self.all_hot_spots[index + 1] - rvalue) >= int(
-                                self.variation_controller.hot_spot_min_interval_to_size_ratio * self.sequence_size)):
+                if valid:
+                    if (abs(self.all_hot_spots[index + 1] - rvalue) <= max_distance
+                        and abs(self.all_hot_spots[index + 1] - rvalue) >= min_distance):
                         valid = True
                     else:
                         valid = False
                 else:
-                    if (abs(self.all_hot_spots[index + 1] - rvalue) <= int(
-                                self.variation_controller.hot_spot_max_interval_to_size_ratio * self.sequence_size)
-                        and abs(self.all_hot_spots[index + 1] - rvalue) >= int(
-                                self.variation_controller.hot_spot_min_interval_to_size_ratio * self.sequence_size)):
+                    if (abs(self.all_hot_spots[index + 1] - rvalue) <= max_distance
+                        and abs(self.all_hot_spots[index + 1] - rvalue) >= min_distance):
                         valid = True
 
         self.all_hot_spots.remove(rvalue)
