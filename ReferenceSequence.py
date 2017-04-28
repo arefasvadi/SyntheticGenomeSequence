@@ -11,7 +11,7 @@ class ReferenceSequence(object):
 
         print "*********Started reading sequence file*********"
         self.sequence = Utility.readfile(reference_file_path_fname).split("\n")
-        self.sequence_id = self.sequence[0][:-1]
+        self.sequence_id = self.sequence[0][1:]
         self.sequence = self.sequence[1].upper()
         self.sequence_size = len(self.sequence)
         # print "Reference sequence is: " + self.sequence
@@ -28,6 +28,7 @@ class ReferenceSequence(object):
 
         print "*********Started generating synthetic sequences*********"
         # cnt = 0
+        all_in_one = ""
         for synthetic_seq in self.synthetic_sequences:
             # if(cnt > 2):
             #     break
@@ -60,13 +61,15 @@ class ReferenceSequence(object):
                 synthetic_seq.fill_before_locus(start_pos, self.sequence_size)
                     # cnt = cnt + 1
             # synthetic_seq.print_vcf()
-            fasta_output = str(synthetic_seq.sequence_id) + ">\n" + str(synthetic_seq.sequence)
-            vcf_output = str(synthetic_seq.sequence_id) + ">\n" + str(synthetic_seq.vcf)
+            fasta_output = ">" + str(synthetic_seq.sequence_id) + "\n" + str(synthetic_seq.sequence)
+            all_in_one = all_in_one + fasta_output + "\n"
+            vcf_output = ">" + str(synthetic_seq.sequence_id) + "\n" + str(synthetic_seq.vcf)
             Utility.writefile(output_file_path + str(synthetic_seq.sequence_id) + ".fasta", fasta_output)
             Utility.writefile(output_file_path + str(synthetic_seq.sequence_id) + ".vcf", vcf_output)
         # Writing reference sequence
-        fasta_output = str(self.sequence_id) + ">\n" + str(self.sequence)
+        fasta_output = ">" + str(self.sequence_id) + "\n" + str(self.sequence)
         Utility.writefile(output_file_path + str(synthetic_seq.sequence_id) + ".fasta", fasta_output)
+        Utility.writefile(output_file_path + "allinone.fasta", fasta_output + "\n" + all_in_one)
         print "*********Finished generating synthetic sequences*********\n"
 
     def __substitution_handler(self, synthetic_seq, high_variance, locus):
